@@ -36,6 +36,67 @@ def is_option(func):
     return wrapper
 
 
+def ip_field(data, *keys):
+    """Nested lookup. Missing keys and nulls are None; False, 0, and '' are kept."""
+    cur = data
+    for key in keys:
+        if not isinstance(cur, dict) or key not in cur or cur[key] is None:
+            return None
+        cur = cur[key]
+    return cur
+
+
+def show_ip_field(label, value):
+    if value is None:
+        value = "N/A"
+    print(f"{Wh}{label}{Gr}", value)
+
+
+def render_ip_track(ip, ip_data):
+    show_ip_field("\n IP target       :", ip)
+    show_ip_field(" Type IP         :", ip_field(ip_data, "type"))
+    show_ip_field(" Country         :", ip_field(ip_data, "country"))
+    show_ip_field(" Country Code    :", ip_field(ip_data, "country_code"))
+    show_ip_field(" City            :", ip_field(ip_data, "city"))
+    show_ip_field(" Continent       :", ip_field(ip_data, "continent"))
+    show_ip_field(" Continent Code  :", ip_field(ip_data, "continent_code"))
+    show_ip_field(" Region          :", ip_field(ip_data, "region"))
+    show_ip_field(" Region Code     :", ip_field(ip_data, "region_code"))
+    lat = ip_field(ip_data, "latitude")
+    lon = ip_field(ip_data, "longitude")
+    show_ip_field(" Latitude        :", lat)
+    show_ip_field(" Longitude       :", lon)
+    maps = None
+    if lat is not None and lon is not None:
+        try:
+            maps = f"https://www.google.com/maps/@{int(lat)},{int(lon)},8z"
+        except (TypeError, ValueError):
+            maps = None
+    show_ip_field(" Maps            :", maps)
+    show_ip_field(" EU              :", ip_field(ip_data, "is_eu"))
+    show_ip_field(" Postal          :", ip_field(ip_data, "postal"))
+    show_ip_field(" Calling Code    :", ip_field(ip_data, "calling_code"))
+    show_ip_field(" Capital         :", ip_field(ip_data, "capital"))
+    show_ip_field(" Borders         :", ip_field(ip_data, "borders"))
+    flag = ip_field(ip_data, "flag", "emoji")
+    if flag is None:
+        show_ip_field(" Country Flag    :", None)
+    else:
+        # Do not end the line on a flag emoji. Some terminals drop the
+        # newline after a regional-indicator pair, so ASN prints beside it.
+        print(f"{Wh} Country Flag    :{Gr} {flag} ")
+    show_ip_field(" ASN             :", ip_field(ip_data, "connection", "asn"))
+    show_ip_field(" ORG             :", ip_field(ip_data, "connection", "org"))
+    show_ip_field(" ISP             :", ip_field(ip_data, "connection", "isp"))
+    show_ip_field(" Domain          :", ip_field(ip_data, "connection", "domain"))
+    show_ip_field(" ID              :", ip_field(ip_data, "timezone", "id"))
+    show_ip_field(" ABBR            :", ip_field(ip_data, "timezone", "abbr"))
+    show_ip_field(" DST             :", ip_field(ip_data, "timezone", "is_dst"))
+    show_ip_field(" Offset          :", ip_field(ip_data, "timezone", "offset"))
+    show_ip_field(" UTC             :", ip_field(ip_data, "timezone", "utc"))
+    show_ip_field(" Current Time    :", ip_field(ip_data, "timezone", "current_time"))
+
+
 # FUNCTIONS FOR MENU
 @is_option
 def IP_Track():
@@ -45,36 +106,7 @@ def IP_Track():
     req_api = requests.get(f"http://ipwho.is/{ip}")  # API IPWHOIS.IS
     ip_data = json.loads(req_api.text)
     time.sleep(2)
-    print(f"{Wh}\n IP target       :{Gr}", ip)
-    print(f"{Wh} Type IP         :{Gr}", ip_data["type"])
-    print(f"{Wh} Country         :{Gr}", ip_data["country"])
-    print(f"{Wh} Country Code    :{Gr}", ip_data["country_code"])
-    print(f"{Wh} City            :{Gr}", ip_data["city"])
-    print(f"{Wh} Continent       :{Gr}", ip_data["continent"])
-    print(f"{Wh} Continent Code  :{Gr}", ip_data["continent_code"])
-    print(f"{Wh} Region          :{Gr}", ip_data["region"])
-    print(f"{Wh} Region Code     :{Gr}", ip_data["region_code"])
-    print(f"{Wh} Latitude        :{Gr}", ip_data["latitude"])
-    print(f"{Wh} Longitude       :{Gr}", ip_data["longitude"])
-    lat = int(ip_data['latitude'])
-    lon = int(ip_data['longitude'])
-    print(f"{Wh} Maps            :{Gr}", f"https://www.google.com/maps/@{lat},{lon},8z")
-    print(f"{Wh} EU              :{Gr}", ip_data["is_eu"])
-    print(f"{Wh} Postal          :{Gr}", ip_data["postal"])
-    print(f"{Wh} Calling Code    :{Gr}", ip_data["calling_code"])
-    print(f"{Wh} Capital         :{Gr}", ip_data["capital"])
-    print(f"{Wh} Borders         :{Gr}", ip_data["borders"])
-    print(f"{Wh} Country Flag    :{Gr}", ip_data["flag"]["emoji"])
-    print(f"{Wh} ASN             :{Gr}", ip_data["connection"]["asn"])
-    print(f"{Wh} ORG             :{Gr}", ip_data["connection"]["org"])
-    print(f"{Wh} ISP             :{Gr}", ip_data["connection"]["isp"])
-    print(f"{Wh} Domain          :{Gr}", ip_data["connection"]["domain"])
-    print(f"{Wh} ID              :{Gr}", ip_data["timezone"]["id"])
-    print(f"{Wh} ABBR            :{Gr}", ip_data["timezone"]["abbr"])
-    print(f"{Wh} DST             :{Gr}", ip_data["timezone"]["is_dst"])
-    print(f"{Wh} Offset          :{Gr}", ip_data["timezone"]["offset"])
-    print(f"{Wh} UTC             :{Gr}", ip_data["timezone"]["utc"])
-    print(f"{Wh} Current Time    :{Gr}", ip_data["timezone"]["current_time"])
+    render_ip_track(ip, ip_data)
 
 
 @is_option
